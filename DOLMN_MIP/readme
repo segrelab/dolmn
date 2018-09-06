@@ -3,7 +3,7 @@
 
 
 
-use GITecoli_core_equal12 
+GITecoli_core_equal12_use.m shows how to use function GITecoli_core_equal12 
 %% input folder core_input:
 %   S matrix, lb,ub,metNames,rxnNames and essential reactions
 %% output folder core_output_1/core_output_2:
