@@ -10,7 +10,7 @@ loadDataName = 'Ecoli_Core';
 load('Ecoli_core_newS.mat')
 
 % Load DOLMN Data
-load(['DOLMN_Parsed\Core\' loadDataName '.mat'])
+load(fullfile('DOLMN_Parsed','Core',[loadDataName '.mat']))
 
 %% Interpolate Biomass
 
@@ -238,7 +238,7 @@ tcaEucDist(biomass2 == 0) = NaN;
 
 %% Save Data
 
-save(['DOLMN_Parsed/' loadDataName '_interp.mat'], ...
+save(fullfile('DOLMN_Parsed',[loadDataName '_interp.mat']), ...
     'x1','x2','y1','y2','z1','z2', ... % biomass flux growth boundary
     'trsptCon','intlCon','biomass*','jaccDist_*', ... % biomass flux, Jaccard distance
     'metNames','exchMets*','numExchMets_*', ... % exchanged metabolites

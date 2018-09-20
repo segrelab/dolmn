@@ -13,10 +13,10 @@ model_title = 'E. coli iJR904';
 load('Ecoli_iJR904_newS.mat')
 
 % Medium
-[~,exch_rxns] = identifyExchRxns(Ecoli);
-[metInds,~] = identifyMetsFromRxns(Ecoli,exch_rxns);
-medium = Ecoli.mets(metInds);
-medium_rxns = Ecoli.rxns(exch_rxns);
+[~,exchRxns_idx] = identifyExchRxns(Ecoli);
+[exchMets_idx,~] = identifyExchMets(Ecoli,exchRxns_idx);
+medium = Ecoli.mets(exchMets_idx);
+medium_rxns = Ecoli.rxns(exchRxns_idx);
 
 % ATPM Reaction
 atpm_name = 'ATPM';
@@ -37,7 +37,7 @@ for trsptCon_num = trsptCon
     
     % 1 Model
     disp('     1 Model')
-    data1 = load(['DOLMN_Output\iJR904\CVX_iJR904_K1_Nt' int2str(trsptCon_num) '.mat']);
+    data1 = load(fullfile('DOLMN_Output','iJR904',['CVX_iJR904_K1_Nt' int2str(trsptCon_num) '.mat']));
     % Data
     data1.trspt_con = trsptCon_num.*ones(size(data1.sparse_con));
     % Check for Infeasible Solutions
@@ -65,11 +65,12 @@ for trsptCon_num = trsptCon
     % Process
     [models1,base_model1,model_flux1] = algorithm2models(data1,Ecoli,[model_title ' 1 Model'],medium_rxns,atpm_name);
     % Save Data
-    save(['DOLMN_Parsed\iJR904\' saveDataName '_1Model_TrsptCon_' int2str(trsptCon_num) '.mat'],'models1','base_model1','model_flux1')
+    save(fullfile('DOLMN_Parsed','iJR904',[saveDataName '_1Model_TrsptCon_' int2str(trsptCon_num) '.mat']), ...
+        'models1','base_model1','model_flux1')
     
     % 2 Models
     disp('     2 Models')
-    data2 = load(['DOLMN_Output\iJR904\CVX_iJR904_K2_Nt' int2str(trsptCon_num) '.mat']);
+    data2 = load(fullfile('DOLMN_Output','iJR904',['CVX_iJR904_K2_Nt' int2str(trsptCon_num) '.mat']));
     % Data
     data2.trspt_con = trsptCon_num.*ones(size(data2.sparse_con));
     % Check for Infeasible Solutions
@@ -96,11 +97,12 @@ for trsptCon_num = trsptCon
     % Process
     [models2,base_model2,model_flux2] = algorithm2models(data2,Ecoli,[model_title ' 2 Models'],medium_rxns,atpm_name);
     % Save Data
-    save(['DOLMN_Parsed\iJR904\' saveDataName '_2Models_TrsptCon_' int2str(trsptCon_num) '.mat'],'models2','base_model2','model_flux2')
+    save(fullfile('DOLMN_Parsed','iJR904',[saveDataName '_2Models_TrsptCon_' int2str(trsptCon_num) '.mat']), ...
+        'models2','base_model2','model_flux2')
     
     % 3 Models
     disp('     3 Models')
-    data3 = load(['DOLMN_Output\iJR904\CVX_iJR904_K3_Nt' int2str(trsptCon_num) '.mat']);
+    data3 = load(fullfile('DOLMN_Output','iJR904',['CVX_iJR904_K3_Nt' int2str(trsptCon_num) '.mat']));
     % Data
     data3.trspt_con = trsptCon_num.*ones(size(data3.sparse_con));
     % Check for Infeasible Solutions
@@ -127,7 +129,8 @@ for trsptCon_num = trsptCon
     % Process
     [models3,base_model3,model_flux3] = algorithm2models(data3,Ecoli,[model_title ' 3 Models'],medium_rxns,atpm_name);
     % Save Data
-    save(['DOLMN_Parsed\iJR904\' saveDataName '_3Models_TrsptCon_' int2str(trsptCon_num) '.mat'],'models3','base_model3','model_flux3')
+    save(fullfile('DOLMN_Parsed','iJR904',[saveDataName '_3Models_TrsptCon_' int2str(trsptCon_num) '.mat']), ...
+        'models3','base_model3','model_flux3')
     
     clear data1* data2* data3* models* base_model* model_flux* opt_status*
     close all
@@ -141,7 +144,7 @@ for trsptCon_num = trsptCon1only
     
     % 1 Model
     disp('     1 Model')
-    data1 = load(['DOLMN_Output\iJR904\CVX_iJR904_K1_Nt' int2str(trsptCon_num) '.mat']);
+    data1 = load(fullfile('DOLMN_Output','iJR904',['CVX_iJR904_K1_Nt' int2str(trsptCon_num) '.mat']));
     % Data
     data1.trspt_con = trsptCon_num.*ones(size(data1.sparse_con));
     % Check for Infeasible Solutions
@@ -168,7 +171,8 @@ for trsptCon_num = trsptCon1only
     % Process
     [models1,base_model1,model_flux1] = algorithm2models(data1,Ecoli,[model_title ' 1 Model'],medium_rxns,atpm_name);
     % Save Data
-    save(['DOLMN_Parsed\iJR904\' saveDataName '_1Model_TrsptCon_' int2str(trsptCon_num) '.mat'],'models1','base_model1','model_flux1')
+    save(fullfile('DOLMN_Parsed','iJR904',[saveDataName '_1Model_TrsptCon_' int2str(trsptCon_num) '.mat']), ...
+        'models1','base_model1','model_flux1')
     
     clear data1* models* base_model* model_flux* opt_status*
     close all
@@ -182,7 +186,7 @@ for trsptCon_num = trsptCon2_3only
 
     % 2 Models
     disp('     2 Models')
-    data2 = load(['DOLMN_Output\iJR904\CVX_iJR904_K2_Nt' int2str(trsptCon_num) '.mat']);
+    data2 = load(fullfile('DOLMN_Output','iJR904',['CVX_iJR904_K2_Nt' int2str(trsptCon_num) '.mat']));
     % Data
     data2.trspt_con = trsptCon_num.*ones(size(data2.sparse_con));
     % Check for Infeasible Solutions
@@ -209,11 +213,12 @@ for trsptCon_num = trsptCon2_3only
     % Process
     [models2,base_model2,model_flux2] = algorithm2models(data2,Ecoli,[model_title ' 2 Models'],medium_rxns,atpm_name);
     % Save Data
-    save(['DOLMN_Parsed\iJR904\' saveDataName '_2Models_TrsptCon_' int2str(trsptCon_num) '.mat'],'models2','base_model2','model_flux2')
+    save(fullfile('DOLMN_Parsed','iJR904',[saveDataName '_2Models_TrsptCon_' int2str(trsptCon_num) '.mat']), ...
+        'models2','base_model2','model_flux2')
     
     % 3 Models
     disp('     3 Models')
-    data3 = load(['DOLMN_Output\iJR904\CVX_iJR904_K3_Nt' int2str(trsptCon_num) '.mat']);
+    data3 = load(fullfile('DOLMN_Output','iJR904',['CVX_iJR904_K3_Nt' int2str(trsptCon_num) '.mat']));
     % Data
     data3.trspt_con = trsptCon_num.*ones(size(data3.sparse_con));
     % Check for Infeasible Solutions
@@ -240,7 +245,8 @@ for trsptCon_num = trsptCon2_3only
     % Process
     [models3,base_model3,model_flux3] = algorithm2models(data3,Ecoli,[model_title ' 3 Models'],medium_rxns,atpm_name);
     % Save Data
-    save(['DOLMN_Parsed\iJR904\' saveDataName '_3Models_TrsptCon_' int2str(trsptCon_num) '.mat'],'models3','base_model3','model_flux3')
+    save(fullfile('DOLMN_Parsed','iJR904',[saveDataName '_3Models_TrsptCon_' int2str(trsptCon_num) '.mat']), ...
+        'models3','base_model3','model_flux3')
     
     clear data2* data3* models* base_model* model_flux* opt_status*
     close all
@@ -253,7 +259,7 @@ end
 model1 = cell(size(trsptCon1)); % Pre-Allocate
 for trsptCon_num = 1:numel(trsptCon1)
     % Load Data
-    load(['DOLMN_Parsed\iJR904\' saveDataName '_1Model_TrsptCon_' int2str(trsptCon1(trsptCon_num)) '.mat'],'model_flux1')
+    load(fullfile('DOLMN_Parsed','iJR904',[saveDataName '_1Model_TrsptCon_' int2str(trsptCon1(trsptCon_num)) '.mat']),'model_flux1')
     % Save to New Struct
     model1{trsptCon_num} = model_flux1; clear model_flux1
 end
@@ -262,7 +268,7 @@ end
 model2 = cell(size(trsptCon2_3)); % Pre-Allocate
 for trsptCon_num = 1:numel(trsptCon2_3)
     % Load Data
-    load(['DOLMN_Parsed\iJR904\' saveDataName '_2Models_TrsptCon_' int2str(trsptCon2_3(trsptCon_num)) '.mat'],'model_flux2')
+    load(fullfile('DOLMN_Parsed','iJR904',[saveDataName '_2Models_TrsptCon_' int2str(trsptCon2_3(trsptCon_num)) '.mat']),'model_flux2')
     % Save to New Struct
     model2{trsptCon_num} = model_flux2; clear model_flux2
 end
@@ -271,7 +277,7 @@ end
 model3 = cell(size(trsptCon2_3)); % Pre-Allocate
 for trsptCon_num = 1:numel(trsptCon2_3)
     % Load Data
-    load(['DOLMN_Parsed\iJR904\' saveDataName '_3Models_TrsptCon_' int2str(trsptCon2_3(trsptCon_num)) '.mat'],'model_flux3')
+    load(fullfile('DOLMN_Parsed','iJR904',[saveDataName '_3Models_TrsptCon_' int2str(trsptCon2_3(trsptCon_num)) '.mat']),'model_flux3')
     % Save to New Struct
     model3{trsptCon_num} = model_flux3; clear model_flux3
 end
@@ -362,7 +368,7 @@ intlCon3 = model3{end}{1}.intl_con; % intracellular sparsity constraints
 trsptCon3 = arrayfun(@(x) model3{x}{1}.trspt_con(1), 1:numel(model3)); % transport sparsity constraints
 
 % Save
-save(['DOLMN_Parsed\iJR904\' saveDataName '.mat'],...
+save(fullfile('DOLMN_Parsed','iJR904',[saveDataName '.mat']), ...
     'model1','model2','model3','trsptCon1','trsptCon2','trsptCon3','intlCon1','intlCon2','intlCon3')
 
 

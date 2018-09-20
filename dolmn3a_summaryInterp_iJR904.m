@@ -10,7 +10,7 @@ loadDataName = 'Ecoli_iJR904';
 load('Ecoli_iJR904_newS.mat')
 
 % Load DOLMN Data
-load(['DOLMN_Parsed\iJR904\' loadDataName '.mat'])
+load(fullfile('DOLMN_Parsed','iJR904',[loadDataName '.mat']))
 
 %% Interpolate Biomass
 
@@ -439,11 +439,144 @@ for pathNum = 1:numel(pathwayNames)
     pathwayEucDist{pathNum}(biomass2 == 0) = NaN;
 end
 
+%% Number of Unique/Same Intracellular Reactions
+
+intlRxns_idx = model1{1}{1}.intl_idx;
+
+% 1 Model
+[X,Y] = meshgrid(intlCon1,trsptCon1);
+V = zeros(size(X));
+for trsptNum = 1:numel(model1)
+    for intlNum = find(model1{trsptNum}{1}.biomass)
+        [~,~,intlIdx] = intersect(model1{trsptNum}{1}.intl_con(intlNum),intlCon1);
+        V(trsptNum,intlIdx) = ...
+            numel(find(model1{trsptNum}{1}.int(intlRxns_idx,intlNum) ~= 0));
+    end
+end
+intlRxns1m_total = interp2(X,Y,V, intlCon_mat,trsptCon_mat, 'linear',0); intlRxns1m_total(biomass1 == 0) = NaN;
+
+% 2 Models
+[X,Y] = meshgrid(intlCon2,trsptCon2);
+V1 = zeros(size(X));
+V2 = zeros(size(X));
+for trsptNum = 1:numel(model2)
+    for intlNum = find(model2{trsptNum}{1}.biomass)
+        [~,~,intlIdx] = intersect(model2{trsptNum}{1}.intl_con(intlNum),intlCon2);
+        V1(trsptNum,intlIdx) = ...
+            numel(find(model2{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model2{trsptNum}{2}.int(intlRxns_idx,intlNum) ~= 0));
+        V2(trsptNum,intlIdx) = ...
+            numel(find(model2{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model2{trsptNum}{2}.int(intlRxns_idx,intlNum) == 2));
+    end
+end
+intlRxns2m_total = interp2(X,Y,V1, intlCon_mat,trsptCon_mat, 'linear',0); intlRxns2m_total(biomass2 == 0) = NaN;
+intlRxns2m_same = interp2(X,Y,V2, intlCon_mat,trsptCon_mat, 'linear',0); intlRxns2m_same(biomass2 == 0) = NaN;
+
+% 3 Models
+[X,Y] = meshgrid(intlCon3,trsptCon3);
+V1 = zeros(size(X));
+V2 = zeros(size(X));
+V3 = zeros(size(X));
+for trsptNum = 1:numel(model3)
+    for intlNum = find(model3{trsptNum}{1}.biomass)
+        [~,~,intlIdx] = intersect(model3{trsptNum}{1}.intl_con(intlNum),intlCon3);
+        V1(trsptNum,intlIdx) = ...
+            numel(find(model3{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptNum}{2}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptNum}{3}.int(intlRxns_idx,intlNum) ~= 0));
+        V2(trsptNum,intlIdx) = ...
+            numel(find(model3{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptNum}{2}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptNum}{3}.int(intlRxns_idx,intlNum) == 2));
+        V3(trsptNum,intlIdx) = ...
+            numel(find(model3{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptNum}{2}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptNum}{3}.int(intlRxns_idx,intlNum) == 3));
+    end
+end
+intlRxns3m_total = interp2(X,Y,V1, intlCon_mat,trsptCon_mat, 'linear',0); intlRxns3m_total(biomass3 == 0) = NaN;
+intlRxns3m_same2 = interp2(X,Y,V2, intlCon_mat,trsptCon_mat, 'linear',0); intlRxns3m_same2(biomass3 == 0) = NaN;
+intlRxns3m_same3 = interp2(X,Y,V3, intlCon_mat,trsptCon_mat, 'linear',0); intlRxns3m_same3(biomass3 == 0) = NaN;
+
+% 1 Model & 2 Models
+[X,Y] = meshgrid(intlCon1,trsptCon1);
+V1 = zeros(size(X));
+V2 = zeros(size(X));
+for trsptNum = 1:numel(model1)
+    [~,trsptIdx,~] = intersect(trsptCon2,trsptCon1(trsptNum));
+    for intlNum = find(model1{trsptNum}{1}.biomass)
+        [~,~,intlIdx] = intersect(model1{trsptNum}{1}.intl_con(intlNum),intlCon1);
+        [~,~,intlIdx_2m] = intersect(model1{trsptNum}{1}.intl_con(intlNum),model2{trsptIdx}{1}.intl_con);
+        V1(trsptNum,intlIdx) = ...
+            numel(find(model1{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model2{trsptIdx}{1}.int(intlRxns_idx,intlIdx_2m) + ...
+            model2{trsptIdx}{2}.int(intlRxns_idx,intlIdx_2m) ~= 0));
+        V2(trsptNum,intlIdx) = ...
+            numel(find(model1{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            sign(model2{trsptIdx}{1}.int(intlRxns_idx,intlIdx_2m) + ...
+            model2{trsptIdx}{2}.int(intlRxns_idx,intlIdx_2m)) == 2));
+    end
+end
+intlRxns2m1m_total = interp2(X,Y,V1, intlCon_mat,trsptCon_mat, 'linear',0); intlRxns2m1m_total(biomass1 == 0) = NaN;
+intlRxns2m1m_same = interp2(X,Y,V2, intlCon_mat,trsptCon_mat, 'linear',0); intlRxns2m1m_same(biomass1 == 0) = NaN;
+
+% 1 Model & 3 Models
+[X,Y] = meshgrid(intlCon1,trsptCon1);
+V1 = zeros(size(X));
+V2 = zeros(size(X));
+for trsptNum = 1:numel(model1)
+    [~,trsptIdx,~] = intersect(trsptCon3,trsptCon1(trsptNum));
+    for intlNum = find(model1{trsptNum}{1}.biomass)
+        [~,~,intlIdx] = intersect(model1{trsptNum}{1}.intl_con(intlNum),intlCon1);
+        [~,~,intlIdx_3m] = intersect(model1{trsptNum}{1}.intl_con(intlNum),model3{trsptIdx}{1}.intl_con);
+        V1(trsptNum,intlIdx) = ...
+            numel(find(model1{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptIdx}{1}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptIdx}{2}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptIdx}{3}.int(intlRxns_idx,intlIdx_3m) ~= 0));
+        V2(trsptNum,intlIdx) = ...
+            numel(find(model1{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            sign(model3{trsptIdx}{1}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptIdx}{2}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptIdx}{3}.int(intlRxns_idx,intlIdx_3m)) == 2));
+    end
+end
+intlRxns3m1m_total = interp2(X,Y,V1, intlCon_mat,trsptCon_mat, 'linear',0); intlRxns3m1m_total(biomass1 == 0) = NaN;
+intlRxns3m1m_same = interp2(X,Y,V2, intlCon_mat,trsptCon_mat, 'linear',0); intlRxns3m1m_same(biomass1 == 0) = NaN;
+
+% 2 Models & 3 Models
+[X,Y] = meshgrid(intlCon2,trsptCon2);
+V1 = zeros(size(X));
+V2 = zeros(size(X));
+for trsptNum = 1:numel(model2)
+    for intlNum = find(model2{trsptNum}{1}.biomass)
+        [~,~,intlIdx] = intersect(model2{trsptNum}{1}.intl_con(intlNum),intlCon2);
+        [~,~,intlIdx_3m] = intersect(model2{trsptNum}{1}.intl_con(intlNum),model3{trsptNum}{1}.intl_con);
+        V1(trsptNum,intlIdx) = ...
+            numel(find(model2{trsptNum}{1}.int(intlRxns_idx,intlIdx_2m) + ...
+            model2{trsptNum}{2}.int(intlRxns_idx,intlIdx_2m) + ...
+            model3{trsptNum}{1}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptNum}{2}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptNum}{3}.int(intlRxns_idx,intlIdx_3m) ~= 0));
+        V2(trsptNum,intlIdx) = ...
+            numel(find(sign(model2{trsptNum}{1}.int(intlRxns_idx,intlIdx_2m) + ...
+            model2{trsptNum}{2}.int(intlRxns_idx,intlIdx_2m)) + ...
+            sign(model3{trsptNum}{1}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptNum}{2}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptNum}{3}.int(intlRxns_idx,intlIdx_3m)) == 2));
+    end
+end
+intlRxns2m3m_total = interp2(X,Y,V1, intlCon_mat,trsptCon_mat, 'linear',0); intlRxns2m3m_total(biomass1 == 0) = NaN;
+intlRxns2m3m_same = interp2(X,Y,V2, intlCon_mat,trsptCon_mat, 'linear',0); intlRxns2m3m_same(biomass1 == 0) = NaN;
+
+clear intlRxns_idx
 %% Save Data
 
-save(['DOLMN_Parsed/' loadDataName '_interp.mat'], ...
+save(fullfile('DOLMN_Parsed',[loadDataName '_interp.mat']), ...
     'x1','x2','x3','y1','y2','y3','z1','z2','z3', ... % biomass flux growth boundary
     'trsptCon','intlCon','biomass*','jaccDist_*','eucDist_*', ... % biomass flux, Jaccard distance, Euclidean distance
     'metNames','exchMets*','numExchMets_*', ... % exchanged metabolites
     'C_*','N_*','P_*','S_*','O_*', ... % where models don't used ...
-    'pathwayNames','pathwayJaccDist','pathwayEucDist'); % pathways
+    'pathwayNames','pathwayJaccDist','pathwayEucDist', ... % pathways
+    'intlRxns*'); % # of unique/same intracellular reactions

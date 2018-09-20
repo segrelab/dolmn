@@ -30,21 +30,15 @@ cbarPos = [0.8 0.1 0.02 0.82]; % colorbar position
 %% Figure S1: Minimum number of intracellular reactions needed for growth
 
 % Load Data
-vars = {'intlCon*','biomass*','min_intlRxns*','intlRxns*'};
-load(['DOLMN_Parsed/' loadDataName_full '_summary.mat'],vars{:})
+vars1a = {'intlCon*','intlRxns2m_same','intlRxns3m_same3'}; vars1b = {'minNi'};
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_summary.mat']),vars1a{:})
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_summary.mat']),vars1b{:})
 
 % Colormaps
 cmap_2m = [230, 85, 13]./256;
 cmap_3m = [117,107,177]./256;
-
-% Calculate Min Ni
-minNi(1) = min(intlCon1(arrayfun(@(x) find(biomass1(x,:) == 0,1,'last'),1:size(biomass1,1))))+1;
-minNi(2) = min(intlCon2(arrayfun(@(x) find(biomass2(x,:) == 0,1,'last'),1:size(biomass2,1))))+1;
-minNi(3) = min(intlCon3(arrayfun(@(x) find(biomass3(x,:) == 0,1,'last'),1:size(biomass3,1))))+1;
-
-% Same Ni
-intlRxns_same = intersect(intlRxns1m_same,intersect(intlRxns2m_same,intlRxns3m_same));
-min_intlRxns_same = numel(intlRxns_same);
+cmap_rxns2m = cbrewer('seq','Oranges',256);
+cmap_rxns3m = cbrewer('seq','Purples',256);
 
 % S1a: Min Ni
 n = 1;
@@ -58,33 +52,78 @@ ylabel(ax,'T_{IN}', 'FontSize',xyLabelSize)
 title(ax,'Figure S1a', 'FontSize',titleSize)
 print('DOLMN_Plots_Supp/Figure_S1a','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
+[~,intlIdx_2m,~] = find(intlCon2 == minNi(2));
+[~,intlIdx_3m,~] = find(intlCon3 == minNi(3));
 % S1b: Same Ni
 n = 2;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S1b'; ax = axes(fig); clear h*
-h(1) = errorbar(ax,2,mean(min_intlRxns2m_same),std(min_intlRxns2m_same)); hold(ax,'on')
-h(1).Color = cmap_2m; h(1).MarkerFaceColor = cmap_2m; h(1).LineWidth = lineWidth; h(1).Marker = 's';
-h(2) = errorbar(ax,3,mean(min_intlRxns3m_same),std(min_intlRxns3m_same));
-h(2).Color = cmap_3m; h(2).MarkerFaceColor = cmap_3m; h(2).LineWidth = lineWidth; h(2).Marker = 's';
-h(3) = plot(ax,1:3,min_intlRxns_same.*ones(1,3),'k--', 'LineWidth',lineWidth); hold(ax,'off')
+h(1) = errorbar(ax,2,nanmean(intlRxns2m_same(:,intlIdx_2m)),nanstd(intlRxns2m_same(:,intlIdx_2m)),'s', 'LineWidth',lineWidth); hold(ax,'on')
+h(1).Color = cmap_2m; h(1).MarkerFaceColor = cmap_2m;
+h(2) = errorbar(ax,3,nanmean(intlRxns3m_same3(:,intlIdx_3m)),nanstd(intlRxns3m_same3(:,intlIdx_3m)),'s', 'LineWidth',lineWidth); hold(ax,'off')
+h(2).Color = cmap_3m; h(2).MarkerFaceColor = cmap_3m;
 ax.FontSize = axesLabelSize; ax.TickLength = tickLength.*[1 2];
 box(ax,'on'); grid(ax,'on'); xlim(ax,[0,4]); ylim(ax,[150,165]); ax.XTick = 1:3;
-legend(h,{'2 Strains','3 Strains','1, 2, & 3 Strains'}, 'Location','NorthWest', 'FontSize',legendSize, 'Box','Off'); clear h*
+legend(h,{'2 Strains','3 Strains'}, 'Location','NorthWest', 'FontSize',legendSize, 'Box','Off'); clear h*
 xlabel(ax,'K', 'FontSize',xyLabelSize)
 ylabel(ax,'# of Intracellular Reactions the Same', 'FontSize',xyLabelSize)
 title(ax,'Figure S1b', 'FontSize',titleSize)
 print('DOLMN_Plots_Supp/Figure_S1b','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
+clear(vars1a{:}); clear intlIdx_2m intlIdx_3m
+vars2 = {'trsptCon','intlCon','intlRxns2m_same','intlRxns3m_same3','x1','y1','x2','y2','x3','y3'};
+load(fullfile(pwd,'DOLMN_Parsed',[loadDataName_full '_interp.mat']),vars2{:})
+
+% S1c: Unique Intracellular (2 Models)
+n = 3;
+if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
+fig = figure(n); fig.Name = 'S1c'; ax = axes(fig); clear h*
+patch(ax,[0,6.5,6.5,0],[0,0,50,50],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on');
+g = imagesc(ax,trsptCon,intlCon,intlRxns2m_same'); g.AlphaData = ~isnan(intlRxns2m_same'); clear g
+h(1) = plot(ax,x1,y1,'k--', 'LineWidth',lineWidth);
+h(2) = plot(ax,x2,y2,'k-', 'LineWidth',lineWidth); hold(ax,'off');
+box(ax,'on'); grid(ax,'on'); ax.FontSize = axesLabelSize; ax.TickLength = tickLength.*[1 2];
+axis(ax,[trsptLim, intlLim],'square');
+colormap(ax,cmap_rxns2m); caxis(ax,[0, max([nanmax(intlRxns2m_same(:)),nanmax(intlRxns3m_same3(:)),intlLim])])
+cbar = colorbar(ax); cbar.FontSize = axesLabelSize;
+cbar.Label.String = 'Number of Unique Intracellular Reactions'; cbar.Label.FontSize = xyLabelSize;
+ax.Position = axPos; cbar.Position = cbarPos;
+legend(h,{'1 Strain','2 Strains'}, 'Location','SouthWest', 'FontSize',legendSize, 'Box','Off'); clear h*
+xlabel(ax,'T_{TR}', 'FontSize',xyLabelSize)
+ylabel(ax,'T_{IN}', 'FontSize',xyLabelSize)
+title(ax,'Figure S1c', 'FontSize',titleSize)
+print('DOLMN_Plots_Supp/Figure_S1c','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
+
+% S1d: Unique Intracellular (3 Models)
+n = 4;
+if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
+fig = figure(n); fig.Name = 'S1d'; ax = axes(fig); clear h*
+patch(ax,[0,6.5,6.5,0],[0,0,50,50],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on');
+g = imagesc(ax,trsptCon,intlCon,intlRxns3m_same3'); g.AlphaData = ~isnan(intlRxns3m_same3'); clear g
+h(1) = plot(ax,x1,y1,'k--', 'LineWidth',lineWidth);
+h(2) = plot(ax,x2,y2,'k-', 'LineWidth',lineWidth);
+h(3) = plot(ax,x3,y3,'k:', 'LineWidth',lineWidth); hold(ax,'off');
+box(ax,'on'); grid(ax,'on'); ax.FontSize = axesLabelSize; ax.TickLength = tickLength.*[1 2];
+axis(ax,[trsptLim, intlLim],'square');
+colormap(ax,cmap_rxns3m); caxis(ax,[0, max([nanmax(intlRxns2m_same(:)),nanmax(intlRxns3m_same3(:)),intlLim])])
+cbar = colorbar(ax); cbar.FontSize = axesLabelSize;
+cbar.Label.String = 'Number of Unique Intracellular Reactions'; cbar.Label.FontSize = xyLabelSize;
+ax.Position = axPos; cbar.Position = cbarPos;
+legend(h,{'1 Strain','2 Strains','3 Strains'}, 'Location','SouthWest', 'FontSize',legendSize, 'Box','Off'); clear h*
+xlabel(ax,'T_{TR}', 'FontSize',xyLabelSize)
+ylabel(ax,'T_{IN}', 'FontSize',xyLabelSize)
+title(ax,'Figure S1d', 'FontSize',titleSize)
+print('DOLMN_Plots_Supp/Figure_S1d','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
+
 % Clear Variables
-clear(vars{:})
+clear(vars1b{:}); clear(vars2{:})
 clear cmap* vars*
-clear minNi
 
 %% Figure S2: (Nt,Ni) landscapes for Core 2-strain subnetworks
 
 % Load Data
 vars = {'trsptCon','intlCon','biomass*','jaccDist_2m','numExchMets_2m','tcaEucDist','x1','y1','x2','y2'};
-load(['DOLMN_Parsed/' loadDataName_core '_interp.mat'],vars{:})
+load(fullfile('DOLMN_Parsed',[loadDataName_core '_interp.mat']),vars{:})
 
 % Colormaps
 cmap_bioFlux = cbrewer('seq','Greens',256);
@@ -99,7 +138,7 @@ biomass_diff21(biomass1 == 0) = NaN;
 biomass_diff21(biomass_diff21 <= 0) = NaN;
 
 % S2a: Biomass Flux for 1-Strain Subnetworks
-n = 3;
+n = 5;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S2a'; ax = axes(fig); clear h*
 patch(ax,[0,6.5,6.5,0],[0,0,50,50],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on');
@@ -118,7 +157,7 @@ title(ax,'Figure S2a', 'FontSize',titleSize)
 print('DOLMN_Plots_Supp/Figure_S2a','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S2b: Biomass Flux for 2-Strain Subnetworks
-n = 4;
+n = 6;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S2b'; ax = axes(fig); clear h*
 patch(ax,[0,6.5,6.5,0],[0,0,50,50],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on');
@@ -138,7 +177,7 @@ title(ax,'Figure S2b', 'FontSize',titleSize)
 print('DOLMN_Plots_Supp/Figure_S2b','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S2c: Jaccard Distance for 2-Strain Subnetworks
-n = 5;
+n = 7;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S2c'; ax = axes(fig); clear h*
 patch(ax,[0,6.5,6.5,0],[0,0,50,50],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on');
@@ -158,7 +197,7 @@ title(ax,'Figure S2c', 'FontSize',titleSize)
 print('DOLMN_Plots_Supp/Figure_S2c','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S2d: Number of Exchanged Metabolites for 3-Strain Subnetworks
-n = 6;
+n = 8;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S2d'; ax = axes(fig); clear h*
 patch(ax,[0,6.5,6.5,0],[0,0,50,50],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on');
@@ -182,49 +221,11 @@ print('DOLMN_Plots_Supp/Figure_S2d','-dpdf','-bestfit','-r300','-painters',['-f'
 clear(vars{:})
 clear cmap* vars*
 
-%% Figure S3: What are the 9 transporters kept?
-
-% Load Data
-vars = {'min_intlRxns*','min_trsptRxns*','biomass*','intlCon*','intlRxns*'};
-load(['DOLMN_Parsed/' loadDataName_full '_summary.mat'],vars{:})
-
-% Colormaps
-cmap_1m = [  0,114,189]./256;
-cmap_2m1 = [217, 83, 25]./256;
-cmap_2m2 = [237,178, 32]./256;
-
-% S3: Min Nt Reactions
-[~,idx] = find([min_trsptRxns1m; min_trsptRxns2m1; min_trsptRxns2m2]); idx = unique(idx);
-N1 = numel(find(biomass1(1,:)));
-N2 = numel(find(biomass2(1,:)));
-n = 7;
-if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
-fig = figure(n); fig.Name = 'S3'; ax = axes(fig); clear h*
-hold(ax,'on');
-for metNum = 2:2:numel(idx)
-    patch(ax,[0.5,1.5,1.5,0.5]+metNum-1,[0,0,100,100],[1,1,1].*0.75, 'FaceAlpha',0.5, 'EdgeColor','none');
-end
-h = bar(ax,100.*[min_trsptRxns1m(idx)./N1; min_trsptRxns2m1(idx)./N2; min_trsptRxns2m2(idx)./N2]',1); hold(ax,'off')
-h(1).FaceColor = cmap_1m; h(2).FaceColor = cmap_2m1; h(3).FaceColor = cmap_2m2;
-box(ax,'on'); grid(ax,'on'); axis(ax,'square'); xlim(ax,[0,numel(idx)]+0.5);
-ax.FontSize = axesLabelSize; ax.TickLength = tickLength.*[1 2];
-ax.XTick = 1:numel(idx); ax.XTickLabel = min_trsptRxns(idx); ax.XTickLabelRotation = 90;
-legend(h,{'1 Strain','2 Strains (A)','2 Strains (B)'}, 'Location','NorthEastOutside', 'FontSize',legendSize, 'Box','Off'); clear h*
-ax.Position = axPos;
-xlabel(ax,'Transport Reactions', 'FontSize',xyLabelSize)
-ylabel(ax,'Percentage of Simulations Kept When T_{TR}=9', 'FontSize',xyLabelSize)
-title(ax,'Figure S3', 'FontSize',titleSize)
-print('DOLMN_Plots_Supp/Figure_S3','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
-
-% Clear Variables
-clear(vars{:})
-clear cmap* vars*
-
-%% Figure S4: (Nt,Ni) landscapes for 3-strain subnetworks
+%% Figure S3: (Nt,Ni) landscapes for 3-strain subnetworks
 
 % Load Data
 vars = {'trsptCon','intlCon','biomass*','jaccDist*','numExchMets*','x1','y1','x2','y2','x3','y3'};
-load(['DOLMN_Parsed/' loadDataName_full '_interp.mat'],vars{:})
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_interp.mat']),vars{:})
 
 % Colormaps
 cmap_bioFlux = cbrewer('seq','Greens',256);
@@ -246,10 +247,10 @@ biomass_diff32 = biomass3 - biomass2;
 biomass_diff32(biomass2 == 0) = NaN;
 biomass_diff32(biomass_diff32 <= 0) = NaN;
 
-% S4a: Biomass Flux for 3-Strain Subnetworks
-n = 8;
+% S3a: Biomass Flux for 3-Strain Subnetworks
+n = 9;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
-fig = figure(n); fig.Name = 'S4a'; ax = axes(fig); clear h*
+fig = figure(n); fig.Name = 'S3a'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on');
 g = imagesc(ax,trsptCon,intlCon,biomass3_nan'); g.AlphaData = ~isnan(biomass3_nan'); clear g
 h(1) = plot(ax,x1,y1,'k--', 'LineWidth',lineWidth);
@@ -264,13 +265,13 @@ ax.Position = axPos; cbar.Position = cbarPos;
 legend(h,{'1 Strain','2 Strains','3 Strains'}, 'Location','SouthWest', 'FontSize',legendSize, 'Box','Off'); clear h*
 xlabel(ax,'T_{TR}', 'FontSize',xyLabelSize)
 ylabel(ax,'T_{IN}', 'FontSize',xyLabelSize)
-title(ax,'Figure S4a', 'FontSize',titleSize)
-print('DOLMN_Plots_Supp/Figure_S4a','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
+title(ax,'Figure S3a', 'FontSize',titleSize)
+print('DOLMN_Plots_Supp/Figure_S3a','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
-% S4b: Difference in Biomass Flux for 1- and 3-Strain Subnetworks
-n = 9;
+% S3b: Difference in Biomass Flux for 1- and 3-Strain Subnetworks
+n = 10;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
-fig = figure(n); fig.Name = 'S4b'; ax = axes(fig); clear h*
+fig = figure(n); fig.Name = 'S3b'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on'); 
 g = imagesc(ax,trsptCon,intlCon,biomass_diff31'); g.AlphaData = ~isnan(biomass_diff31'); clear g
 h(1) = plot(ax,x1,y1,'k--', 'LineWidth',lineWidth); hold(ax,'off');
@@ -283,13 +284,13 @@ legend(h,{'1 Strain'}, 'Location','SouthWest', 'FontSize',legendSize, 'Box','Off
 ax.Position = axPos; cbar.Position = cbarPos;
 xlabel(ax,'T_{TR}', 'FontSize',xyLabelSize)
 ylabel(ax,'T_{IN}', 'FontSize',xyLabelSize)
-title(ax,'Figure S4b', 'FontSize',titleSize)
-print('DOLMN_Plots_Supp/Figure_S4b','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
+title(ax,'Figure S3b', 'FontSize',titleSize)
+print('DOLMN_Plots_Supp/Figure_S3b','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
-% S4c: Difference in Biomass Flux for 2- and 3-Strain Subnetworks
-n = 10;
+% S3c: Difference in Biomass Flux for 2- and 3-Strain Subnetworks
+n = 11;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
-fig = figure(n); fig.Name = 'S4c'; ax = axes(fig); clear h*
+fig = figure(n); fig.Name = 'S3c'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on'); 
 g = imagesc(ax,trsptCon,intlCon,biomass_diff32'); g.AlphaData = ~isnan(biomass_diff32'); clear g
 h(1) = plot(ax,x1,y1,'k--', 'LineWidth',lineWidth);
@@ -303,13 +304,13 @@ ax.Position = axPos; cbar.Position = cbarPos;
 legend(h,{'1 Strain','2 Strains'}, 'Location','SouthWest', 'FontSize',legendSize, 'Box','Off'); clear h*
 xlabel(ax,'T_{TR}', 'FontSize',xyLabelSize)
 ylabel(ax,'T_{IN}', 'FontSize',xyLabelSize)
-title(ax,'Figure S4c', 'FontSize',titleSize)
-print('DOLMN_Plots_Supp/Figure_S4c','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
+title(ax,'Figure S3c', 'FontSize',titleSize)
+print('DOLMN_Plots_Supp/Figure_S3c','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
-% S4d: Jaccard Distance for 3-Strain Subnetworks, Strains A & B
-n = 11;
+% S3d: Jaccard Distance for 3-Strain Subnetworks, Strains A & B
+n = 12;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
-fig = figure(n); fig.Name = 'S4d'; ax = axes(fig); clear h*
+fig = figure(n); fig.Name = 'S3d'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on'); 
 g = imagesc(ax,trsptCon,intlCon,jaccDist_3m12'); g.AlphaData = ~isnan(jaccDist_3m12'); clear g
 h(1) = plot(ax,x1,y1,'k--', 'LineWidth',lineWidth);
@@ -324,13 +325,13 @@ ax.Position = axPos; cbar.Position = cbarPos;
 legend(h,{'1 Strain','2 Strains','3 Strains'}, 'Location','SouthWest', 'FontSize',legendSize, 'Box','Off'); clear h*
 xlabel(ax,'T_{TR}', 'FontSize',xyLabelSize)
 ylabel(ax,'T_{IN}', 'FontSize',xyLabelSize)
-title(ax,'Figure S4d', 'FontSize',titleSize)
-print('DOLMN_Plots_Supp/Figure_S4d','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
+title(ax,'Figure S3d', 'FontSize',titleSize)
+print('DOLMN_Plots_Supp/Figure_S3d','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
-% S4e: Jaccard Distance for 3-Strain Subnetworks, Strains A & C
-n = 12;
+% S3e: Jaccard Distance for 3-Strain Subnetworks, Strains A & C
+n = 13;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
-fig = figure(n); fig.Name = 'S4e'; ax = axes(fig); clear h*
+fig = figure(n); fig.Name = 'S3e'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on'); 
 g = imagesc(ax,trsptCon,intlCon,jaccDist_3m13'); g.AlphaData = ~isnan(jaccDist_3m13'); clear g
 h(1) = plot(ax,x1,y1,'k--', 'LineWidth',lineWidth);
@@ -345,13 +346,13 @@ ax.Position = axPos; cbar.Position = cbarPos;
 legend(h,{'1 Strain','2 Strains','3 Strains'}, 'Location','SouthWest', 'FontSize',legendSize, 'Box','Off'); clear h*
 xlabel(ax,'T_{TR}', 'FontSize',xyLabelSize)
 ylabel(ax,'T_{IN}', 'FontSize',xyLabelSize)
-title(ax,'Figure S4e', 'FontSize',titleSize)
-print('DOLMN_Plots_Supp/Figure_S4e','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
+title(ax,'Figure S3e', 'FontSize',titleSize)
+print('DOLMN_Plots_Supp/Figure_S3e','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
-% S4f: Jaccard Distance for 3-Strain Subnetworks, Strains B & C
-n = 13;
+% S3f: Jaccard Distance for 3-Strain Subnetworks, Strains B & C
+n = 14;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
-fig = figure(n); fig.Name = 'S4f'; ax = axes(fig); clear h*
+fig = figure(n); fig.Name = 'S3f'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on'); 
 g = imagesc(ax,trsptCon,intlCon,jaccDist_3m23'); g.AlphaData = ~isnan(jaccDist_3m23'); clear g
 h(1) = plot(ax,x1,y1,'k--', 'LineWidth',lineWidth);
@@ -366,13 +367,13 @@ ax.Position = axPos; cbar.Position = cbarPos;
 legend(h,{'1 Strain','2 Strains','3 Strains'}, 'Location','SouthWest', 'FontSize',legendSize, 'Box','Off'); clear h*
 xlabel(ax,'T_{TR}', 'FontSize',xyLabelSize)
 ylabel(ax,'T_{IN}', 'FontSize',xyLabelSize)
-title(ax,'Figure S4f', 'FontSize',titleSize)
-print('DOLMN_Plots_Supp/Figure_S4f','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
+title(ax,'Figure S3f', 'FontSize',titleSize)
+print('DOLMN_Plots_Supp/Figure_S3f','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
-% S4g: Jaccard Distance for 3-Strain Subnetworks, Average
-n = 14;
+% S3g: Jaccard Distance for 3-Strain Subnetworks, Average
+n = 15;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
-fig = figure(n); fig.Name = 'S4g'; ax = axes(fig); clear h*
+fig = figure(n); fig.Name = 'S3g'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on'); 
 g = imagesc(ax,trsptCon,intlCon,jaccDist_3m'); g.AlphaData = ~isnan(jaccDist_3m'); clear g
 h(1) = plot(ax,x1,y1,'k--', 'LineWidth',lineWidth);
@@ -387,13 +388,13 @@ ax.Position = axPos; cbar.Position = cbarPos;
 legend(h,{'1 Strain','2 Strains','3 Strains'}, 'Location','SouthWest', 'FontSize',legendSize, 'Box','Off'); clear h*
 xlabel(ax,'T_{TR}', 'FontSize',xyLabelSize)
 ylabel(ax,'T_{IN}', 'FontSize',xyLabelSize)
-title(ax,'Figure S4g', 'FontSize',titleSize)
-print('DOLMN_Plots_Supp/Figure_S4g','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
+title(ax,'Figure S3g', 'FontSize',titleSize)
+print('DOLMN_Plots_Supp/Figure_S3g','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
-% S4h: Number of Exchanged Metabolites for 3-Strain Subnetworks
-n = 15;
+% S3h: Number of Exchanged Metabolites for 3-Strain Subnetworks
+n = 16;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
-fig = figure(n); fig.Name = 'S4h'; ax = axes(fig); clear h*
+fig = figure(n); fig.Name = 'S3h'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on'); 
 g = imagesc(ax,trsptCon,intlCon,numExchMets_3m'); g.AlphaData = ~isnan(numExchMets_3m'); clear g
 h(1) = plot(ax,x1,y1,'k--', 'LineWidth',lineWidth);
@@ -409,8 +410,46 @@ ax.Position = axPos; cbar.Position = cbarPos;
 legend(h,{'1 Strain','2 Strains','3 Strains'}, 'Location','SouthWest', 'FontSize',legendSize, 'Box','Off'); clear h*
 xlabel(ax,'T_{TR}', 'FontSize',xyLabelSize)
 ylabel(ax,'T_{IN}', 'FontSize',xyLabelSize)
-title(ax,'Figure S4h', 'FontSize',titleSize)
-print('DOLMN_Plots_Supp/Figure_S4h','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
+title(ax,'Figure S3h', 'FontSize',titleSize)
+print('DOLMN_Plots_Supp/Figure_S3h','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
+
+% Clear Variables
+clear(vars{:})
+clear cmap* vars*
+
+%% Figure S4: What are the 9 transporters kept?
+
+% Load Data
+vars = {'min_trsptRxns*','biomass*','intlCon*'};
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_summary.mat']),vars{:})
+
+% Colormaps
+cmap_1m =  [  0,114,189]./256;
+cmap_2m1 = [217, 83, 25]./256;
+cmap_2m2 = [237,178, 32]./256;
+
+% S4: Min Nt Reactions
+[~,idx] = find([min_trsptRxns1m; min_trsptRxns2m1; min_trsptRxns2m2]); idx = unique(idx);
+N1 = numel(find(biomass1(1,:)));
+N2 = numel(find(biomass2(1,:)));
+n = 17;
+if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
+fig = figure(n); fig.Name = 'S4'; ax = axes(fig); clear h*
+hold(ax,'on');
+for metNum = 2:2:numel(idx)
+    patch(ax,[0.5,1.5,1.5,0.5]+metNum-1,[0,0,100,100],[1,1,1].*0.75, 'FaceAlpha',0.5, 'EdgeColor','none');
+end
+h = bar(ax,100.*[min_trsptRxns1m(idx)./N1; min_trsptRxns2m1(idx)./N2; min_trsptRxns2m2(idx)./N2]',1); hold(ax,'off')
+h(1).FaceColor = cmap_1m; h(2).FaceColor = cmap_2m1; h(3).FaceColor = cmap_2m2;
+box(ax,'on'); grid(ax,'on'); axis(ax,'square'); xlim(ax,[0,numel(idx)]+0.5);
+ax.FontSize = axesLabelSize; ax.TickLength = tickLength.*[1 2];
+ax.XTick = 1:numel(idx); ax.XTickLabel = min_trsptRxns(idx); ax.XTickLabelRotation = 90;
+legend(h,{'1 Strain','2 Strains (A)','2 Strains (B)'}, 'Location','NorthEastOutside', 'FontSize',legendSize, 'Box','Off'); clear h*
+ax.Position = axPos;
+xlabel(ax,'Transport Reactions', 'FontSize',xyLabelSize)
+ylabel(ax,'Percentage of Simulations Kept When T_{TR}=9', 'FontSize',xyLabelSize)
+title(ax,'Figure S4', 'FontSize',titleSize)
+print('DOLMN_Plots_Supp/Figure_S4','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % Clear Variables
 clear(vars{:})
@@ -420,13 +459,13 @@ clear cmap* vars*
 
 % Load Data
 vars = {'jaccDist_2m','eucDist_2m','intlCon2','trsptCon2'};
-load(['DOLMN_Parsed/' loadDataName_full '_summary.mat'],vars{:})
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_summary.mat']),vars{:})
 
 % Colormaps
 cmap_Nt = flip(cbrewer('div','Spectral',numel(trsptCon2)-1));
 
 % S5a: Jaccard Distance
-n = 16;
+n = 18;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S5a'; ax = axes(fig); clear h*
 hold(ax,'on');
@@ -446,7 +485,7 @@ title(ax,'Figure S5a', 'FontSize',titleSize)
 print('DOLMN_Plots_Supp/Figure_S5a','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S5b: Euclidean Distance
-n = 17;
+n = 19;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S5b'; ax = axes(fig); clear h*
 hold(ax,'on');
@@ -473,7 +512,7 @@ clear cmap* vars*
 
 % Load Data
 vars = {'jaccDist*','numExchMets*'};
-load(['DOLMN_Parsed/' loadDataName_full '_summary.mat'],vars{:})
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_summary.mat']),vars{:})
 
 % Colormaps
 cmap_barPlot = 0.45.*ones(1,3);
@@ -493,7 +532,7 @@ rho3 = corr(X,Y, 'type','Pearson');
 spear3 = corr(X,Y, 'type','Spearman'); clear X Y
 
 % S6a: Number of Exchanged Metabolites vs Jaccard Distance for 2-Strain Subnetworks
-n = 18;
+n = 20;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S6a'; ax = axes(fig); clear h*
 scatter(ax,jaccDist_2m(:),numExchMets_2m(:),'o', 'MarkerEdgeColor','k', 'MarkerFaceColor',cmap_barPlot, 'SizeData',50)
@@ -512,7 +551,7 @@ set(ah, 'Parent',ax, 'Position',[0, nanmax([numExchMets_2m(:); numExchMets_3m(:)
 print('DOLMN_Plots_Supp/Figure_S6a','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S6b: Number of Exchanged Metabolites vs Jaccard Distance for 3-Strain Subnetworks
-n = 19;
+n = 21;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S6b'; ax = axes(fig); clear h*
 scatter(ax,jaccDist_3m(:),numExchMets_3m(:),'o', 'MarkerEdgeColor','k', 'MarkerFaceColor',cmap_barPlot, 'SizeData',50)
@@ -538,7 +577,7 @@ clear cmap* vars* rho* spear*
 
 % Load Data
 vars = {'exchMetsNum*','metNames','biomass*'};
-load(['DOLMN_Parsed/' loadDataName_full '_summary.mat'],vars{:})
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_summary.mat']),vars{:})
 
 % Colormaps
 cmap_barPlot = 0.45.*ones(1,3);
@@ -579,7 +618,7 @@ clear Ecoli sol* intlMetsIdx
 spear2 = corr(N1,N2, 'type','Spearman');
 spear3 = corr(N1,N3, 'type','Spearman');
 % S7a: Percentage Exchanged vs Percentage Secreted Mets
-n = 20;
+n = 22;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S7a'; ax = axes(fig); clear h*
 h(1) = scatter(ax,N1,N2,'o', 'MarkerEdgeColor','k', 'MarkerFaceColor',cmap_2m, 'SizeData',50); hold(ax,'on');
@@ -598,7 +637,7 @@ clear spear*
 rho23 = corr(N2,N3, 'type','Pearson');
 spear23 = corr(N2,N3, 'type','Spearman');
 % S7b: Percentage Exchanged Mets in 3 vs 2
-n = 21;
+n = 23;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S7b'; ax = axes(fig); clear h*
 scatter(ax,N2,N3,'o', 'MarkerEdgeColor','k', 'MarkerFaceColor',cmap_barPlot, 'SizeData',50)
@@ -621,7 +660,7 @@ clear rho* spear*
 spear2 = corr(cost,N2, 'type','Spearman');
 spear3 = corr(cost,N3, 'type','Spearman');
 % S7c: Number of Exchanged Mets vs Cost to Produce
-n = 22;
+n = 24;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S7c'; ax = axes(fig); clear h*
 h(1) = scatter(ax,cost,N2,'o', 'MarkerEdgeColor','k', 'MarkerFaceColor',cmap_2m, 'SizeData',50); hold(ax,'on');
@@ -640,7 +679,7 @@ clear spear*
 spear2 = corr(numRxns,N2, 'type','Spearman');
 spear3 = corr(numRxns,N3, 'type','Spearman');
 % S7d: Number of Exchanged Mets vs Number of Reactions
-n = 23;
+n = 25;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S7d'; ax = axes(fig); clear h*
 h(1) = scatter(ax,numRxns,N2,'o', 'MarkerEdgeColor','k', 'MarkerFaceColor',cmap_2m, 'SizeData',50); hold(ax,'on');
@@ -662,7 +701,7 @@ rho3 = corr(bioCoeff,N3, 'type','Pearson');
 spear2 = corr(bioCoeff,N2, 'type','Spearman');
 spear3 = corr(bioCoeff,N3, 'type','Spearman');
 % S7e: Number of Exchanged Mets vs Biomass Coefficient
-n = 24;
+n = 26;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S7e'; ax = axes(fig); clear h*
 h(1) = scatter(ax,bioCoeff,N2,'o', 'MarkerEdgeColor','k', 'MarkerFaceColor',cmap_2m, 'SizeData',50); hold(ax,'on');
@@ -686,10 +725,10 @@ clear cost numRxns bioCoeff
 
 % Load Data
 vars = {'trsptCon2','score2m1','score2m2','explained','Nt2m','Ni2m'}; % PCA
-load(['DOLMN_Parsed/' loadDataName_full '_summary.mat'],vars{:})
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_summary.mat']),vars{:})
 
 % S8: PCA
-n = 25;
+n = 27;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S8'; clear h*
 for trsptNum = 1:numel(trsptCon2)-1
@@ -728,7 +767,7 @@ clear cmap* vars*
 
 % Load Data
 vars = {'trsptCon','intlCon','jaccDist_2m','pathwayEucDist','pathwayJaccDist','pathwayNames','metNames','exchMets_2m','numExchMets_2m','x1','y1','x2','y2'};
-load(['DOLMN_Parsed/' loadDataName_full '_interp.mat'],vars{:})
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_interp.mat']),vars{:})
 
 % Colormaps
 cmap_jaccDist = cbrewer('seq','Blues',256);
@@ -736,7 +775,7 @@ cmap_eucDist = cbrewer('seq','Reds',256);
 
 climits = [0, max(arrayfun(@(x) nanmax(pathwayJaccDist{x}(:)),1:numel(pathwayNames)))];
 % S9: Jaccard Distance
-n = 26;
+n = 28;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S9'; clear h*
 for pathNum = 1:numel(pathwayNames)
@@ -760,7 +799,7 @@ cbar.Label.String = 'Jaccard Distance'; cbar.Label.FontSize = 0.5*xyLabelSize;
 print('DOLMN_Plots_Supp/Figure_S9','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S10: Euclidean Distance
-n = 27;
+n = 29;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S10'; clear h*
 for pathNum = 1:numel(pathwayNames)
@@ -800,9 +839,9 @@ clear cmap* vars*
 
 % Load Data
 vars1 = {'trsptCon','intlCon','metNames','exchMets*','x1','y1','x2','y2','x3','y3'};
-load(['DOLMN_Parsed/' loadDataName_full '_interp.mat'],vars1{:})
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_interp.mat']),vars1{:})
 vars2 = {'P1_phi','P2_phi','P3_phi','phi*','exchMetsNum*','exchMetNames'};
-load(['DOLMN_Parsed/' loadDataName_full '_summary.mat'],vars2{:})
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_summary.mat']),vars2{:})
 
 % Colormaps
 cmap_mets = 0.45.*ones(1,3);
@@ -832,7 +871,7 @@ tempNames(rm_idx) = [];
 clear phi tempNames
 
 % S11: 1-Strain Subnetworks
-n = 28;
+n = 30;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S11'; clear h*
 for metNum = 1:numel(idx_met1m)
@@ -851,7 +890,7 @@ end
 print('DOLMN_Plots_Supp/Figure_S11','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S12: 2-Strain Subnetworks
-n = 29;
+n = 31;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S12'; clear h*
 for metNum = 1:numel(idx_met2m)
@@ -871,7 +910,7 @@ end
 print('DOLMN_Plots_Supp/Figure_S12','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S13: 3-Strain Subnetworks
-n = 30;
+n = 32;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S13'; clear h*
 for metNum = 1:numel(idx_met3m)
@@ -901,7 +940,7 @@ clear metNames* idx* rho
 
 % Load Data
 vars = {'trsptCon','intlCon','C_*','N_*','O_*','x1','y1','x2','y2','x3','y3'};
-load(['DOLMN_Parsed/' loadDataName_full '_interp.mat'],vars{:})
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_interp.mat']),vars{:})
 
 % Colormaps
 cmap_1m = [[117,107,177]; [240,240,240]]./256;
@@ -914,7 +953,7 @@ clabel_2m = {'1 Strain Uses';                  'All Strains Use'};
 clabel_3m = {'1 Strain Uses'; '2 Strains Use'; 'All Strains Use'};
 
 % S14a: C2
-n = 31;
+n = 33;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S14a'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on');
@@ -935,7 +974,7 @@ title(ax,'Figure S14a', 'FontSize',titleSize)
 print('DOLMN_Plots_Supp/Figure_S14a','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S14b: C3
-n = 32;
+n = 34;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S14b'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on');
@@ -957,7 +996,7 @@ title(ax,'Figure S14b', 'FontSize',titleSize)
 print('DOLMN_Plots_Supp/Figure_S14b','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S14c: N2
-n = 33;
+n = 35;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S14a'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on');
@@ -978,7 +1017,7 @@ title(ax,'Figure S14c', 'FontSize',titleSize)
 print('DOLMN_Plots_Supp/Figure_S14c','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S14d: N3
-n = 34;
+n = 36;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S14d'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on');
@@ -1000,7 +1039,7 @@ title(ax,'Figure S14d', 'FontSize',titleSize)
 print('DOLMN_Plots_Supp/Figure_S14d','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S14e: O2
-n = 35;
+n = 37;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S14e'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on');
@@ -1021,7 +1060,7 @@ title(ax,'Figure S14e', 'FontSize',titleSize)
 print('DOLMN_Plots_Supp/Figure_S14e','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S14f: O3
-n = 36;
+n = 38;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S14f'; ax = axes(fig); clear h*
 patch(ax,[0,8.5,8.5,0],[0,0,285,285],[1,1,1].*0.75, 'FaceAlpha',0.75, 'EdgeColor','none'); hold(ax,'on');
@@ -1051,7 +1090,7 @@ clear clabel*
 
 % Load Data
 vars = {'phi2','P2_rho','exchMetsNum_2m','exchMetNames','mediumMets','metNames','biomass2'};
-load(['DOLMN_Parsed/' loadDataName_full '_summary.mat'],vars{:})
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_summary.mat']),vars{:})
 
 % Colormaps
 cmap_phi = flip(cbrewer('div','RdBu',256));
@@ -1065,7 +1104,7 @@ phi(rm_idx,:) = []; phi(:,rm_idx) = []; exchMetNames(rm_idx) = [];
 phi(rm_idx,:) = []; phi(:,rm_idx) = []; exchMetNames(rm_idx) = [];
 
 % S15: Phi Coefficient
-n = 37;
+n = 39;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S15'; ax = axes(fig); clear h*
 imagesc(ax,phi);
@@ -1089,7 +1128,7 @@ clear phi
 
 % Load Data
 vars = {'corr_pathMet*','P_path*','pathwayNames','P_mets*','metNames'};
-load(['DOLMN_Parsed/' loadDataName_full '_summary.mat'],vars{:})
+load(fullfile('DOLMN_Parsed',[loadDataName_full '_summary.mat']),vars{:})
 
 % Colormaps
 cmap_corr = flip(cbrewer('div','RdBu',256));
@@ -1099,7 +1138,7 @@ corrA = corr_pathMet_euc(P_pathEuc,P_metsEuc);
 corrB = corr_pathMet_jacc(P_pathEuc,P_metsEuc);
 
 % S18a: Point-Biserial Correlation (Euclidean)
-n = 38;
+n = 40;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S18a'; ax = axes(fig); clear h*
 imagesc(ax,corrA);
@@ -1117,7 +1156,7 @@ title(ax,'Figure S18a', 'FontSize',titleSize)
 print('DOLMN_Plots_Supp/Figure_S18a','-dpdf','-bestfit','-r300','-painters',['-f' int2str(fig.Number)])
 
 % S18a: Point-Biserial Correlation (Jaccard)
-n = 39;
+n = 41;
 if ishandle(n); clf(findobj('Type','Figure', 'Number',n)); end
 fig = figure(n); fig.Name = 'S18b'; ax = axes(fig); clear h*
 imagesc(ax,corrB);

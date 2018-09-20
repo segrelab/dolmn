@@ -10,7 +10,7 @@ loadDataName = 'Ecoli_iJR904';
 load('Ecoli_iJR904_newS.mat')
 
 % Load DOLMN Data
-load(['DOLMN_Parsed\iJR904\' loadDataName '.mat'])
+load(fullfile('DOLMN_Parsed','iJR904',[loadDataName '.mat']))
 
 %% Biomass
 
@@ -470,147 +470,161 @@ figure; [~, ~, P_pathEuc] = dendrogram(Z,0); close gcf
 Z = linkage(corr_pathMet_euc','single','euclidean'); % get tree of hierarchical clusters (cluster closest distances)
 figure; [~, ~, P_metsEuc] = dendrogram(Z,0); close gcf
 
-%% Reactions Kept
+%% Number of Unique/Same Intracellular Reactions
 
-intlRxns = model1{1}{1}.rxns(model1{1}{1}.intl_idx);
+intlRxns_idx = model1{1}{1}.intl_idx;
+
+% Minimum Number of Intracellular Reactions
+minNi(1) = min(intlCon1(arrayfun(@(x) find(biomass1(x,:) == 0,1,'last'),1:size(biomass1,1))))+1;
+minNi(2) = min(intlCon2(arrayfun(@(x) find(biomass2(x,:) == 0,1,'last'),1:size(biomass2,1))))+1;
+minNi(3) = min(intlCon3(arrayfun(@(x) find(biomass3(x,:) == 0,1,'last'),1:size(biomass3,1))))+1;
+
+% 1 Model
+intlRxns1m_total = zeros(size(biomass1));
+for trsptNum = 1:numel(model1)
+    for intlNum = find(model1{trsptNum}{1}.biomass)
+        [~,~,intlIdx] = intersect(model1{trsptNum}{1}.intl_con(intlNum),intlCon1);
+        intlRxns1m_total(trsptNum,intlIdx) = ...
+            numel(find(model1{trsptNum}{1}.int(intlRxns_idx,intlNum) ~= 0));
+    end
+end
+intlRxns1m_total(biomass1 == 0) = NaN;
+
+% 2 Models
+intlRxns2m_total = zeros(size(biomass2));
+intlRxns2m_same = zeros(size(biomass2));
+for trsptNum = 1:numel(model2)
+    for intlNum = find(model2{trsptNum}{1}.biomass)
+        [~,~,intlIdx] = intersect(model2{trsptNum}{1}.intl_con(intlNum),intlCon2);
+        intlRxns2m_total(trsptNum,intlIdx) = ...
+            numel(find(model2{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model2{trsptNum}{2}.int(intlRxns_idx,intlNum) ~= 0));
+        intlRxns2m_same(trsptNum,intlIdx) = ...
+            numel(find(model2{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model2{trsptNum}{2}.int(intlRxns_idx,intlNum) == 2));
+    end
+end
+intlRxns2m_total(biomass2 == 0) = NaN;
+intlRxns2m_same(biomass2 == 0) = NaN;
+
+% 3 Models
+intlRxns3m_total = zeros(size(biomass3));
+intlRxns3m_same2 = zeros(size(biomass3));
+intlRxns3m_same3 = zeros(size(biomass3));
+for trsptNum = 1:numel(model3)
+    for intlNum = find(model3{trsptNum}{1}.biomass)
+        [~,~,intlIdx] = intersect(model3{trsptNum}{1}.intl_con(intlNum),intlCon3);
+        intlRxns3m_total(trsptNum,intlIdx) = ...
+            numel(find(model3{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptNum}{2}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptNum}{3}.int(intlRxns_idx,intlNum) ~= 0));
+        intlRxns3m_same2(trsptNum,intlIdx) = ...
+            numel(find(model3{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptNum}{2}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptNum}{3}.int(intlRxns_idx,intlNum) == 2));
+        intlRxns3m_same3(trsptNum,intlIdx) = ...
+            numel(find(model3{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptNum}{2}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptNum}{3}.int(intlRxns_idx,intlNum) == 3));
+    end
+end
+intlRxns3m_total(biomass3 == 0) = NaN;
+intlRxns3m_same2(biomass3 == 0) = NaN;
+intlRxns3m_same3(biomass3 == 0) = NaN;
+
+% 1 Model & 2 Models
+intlRxns2m1m_total = zeros(size(biomass1));
+intlRxns2m1m_same = zeros(size(biomass1));
+for trsptNum = 1:numel(model1)
+    [~,trsptIdx,~] = intersect(trsptCon2,trsptCon1(trsptNum));
+    for intlNum = find(model1{trsptNum}{1}.biomass)
+        [~,~,intlIdx] = intersect(model1{trsptNum}{1}.intl_con(intlNum),intlCon1);
+        [~,~,intlIdx_2m] = intersect(model1{trsptNum}{1}.intl_con(intlNum),model2{trsptIdx}{1}.intl_con);
+        intlRxns2m1m_total(trsptNum,intlIdx) = ...
+            numel(find(model1{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model2{trsptIdx}{1}.int(intlRxns_idx,intlIdx_2m) + ...
+            model2{trsptIdx}{2}.int(intlRxns_idx,intlIdx_2m) ~= 0));
+        intlRxns2m1m_same(trsptNum,intlIdx) = ...
+            numel(find(model1{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            sign(model2{trsptIdx}{1}.int(intlRxns_idx,intlIdx_2m) + ...
+            model2{trsptIdx}{2}.int(intlRxns_idx,intlIdx_2m)) == 2));
+    end
+end
+intlRxns2m1m_total(biomass1 == 0) = NaN;
+intlRxns2m1m_same(biomass1 == 0) = NaN;
+
+% 1 Model & 3 Models
+intlRxns3m1m_total = zeros(size(biomass1));
+intlRxns3m1m_same = zeros(size(biomass1));
+for trsptNum = 1:numel(model1)
+    [~,trsptIdx,~] = intersect(trsptCon3,trsptCon1(trsptNum));
+    for intlNum = find(model1{trsptNum}{1}.biomass)
+        [~,~,intlIdx] = intersect(model1{trsptNum}{1}.intl_con(intlNum),intlCon1);
+        [~,~,intlIdx_3m] = intersect(model1{trsptNum}{1}.intl_con(intlNum),model3{trsptIdx}{1}.intl_con);
+        intlRxns3m1m_total(trsptNum,intlIdx) = ...
+            numel(find(model1{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            model3{trsptIdx}{1}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptIdx}{2}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptIdx}{3}.int(intlRxns_idx,intlIdx_3m) ~= 0));
+        intlRxns3m1m_same(trsptNum,intlIdx) = ...
+            numel(find(model1{trsptNum}{1}.int(intlRxns_idx,intlNum) + ...
+            sign(model3{trsptIdx}{1}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptIdx}{2}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptIdx}{3}.int(intlRxns_idx,intlIdx_3m)) == 2));
+    end
+end
+intlRxns3m1m_total(biomass1 == 0) = NaN;
+intlRxns3m1m_same(biomass1 == 0) = NaN;
+
+% 2 Models & 3 Models
+intlRxns2m3m_total = zeros(size(biomass2));
+intlRxns2m3m_same = zeros(size(biomass2));
+for trsptNum = 1:numel(model2)
+    for intlNum = find(model2{trsptNum}{1}.biomass)
+        [~,~,intlIdx] = intersect(model2{trsptNum}{1}.intl_con(intlNum),intlCon2);
+        [~,~,intlIdx_3m] = intersect(model2{trsptNum}{1}.intl_con(intlNum),model3{trsptNum}{1}.intl_con);
+        intlRxns2m3m_total(trsptNum,intlIdx) = ...
+            numel(find(model2{trsptNum}{1}.int(intlRxns_idx,intlIdx_2m) + ...
+            model2{trsptNum}{2}.int(intlRxns_idx,intlIdx_2m) + ...
+            model3{trsptNum}{1}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptNum}{2}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptNum}{3}.int(intlRxns_idx,intlIdx_3m) ~= 0));
+        intlRxns2m3m_same(trsptNum,intlIdx) = ...
+            numel(find(sign(model2{trsptNum}{1}.int(intlRxns_idx,intlIdx_2m) + ...
+            model2{trsptNum}{2}.int(intlRxns_idx,intlIdx_2m)) + ...
+            sign(model3{trsptNum}{1}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptNum}{2}.int(intlRxns_idx,intlIdx_3m) + ...
+            model3{trsptNum}{3}.int(intlRxns_idx,intlIdx_3m)) == 2));
+    end
+end
+intlRxns2m3m_total(biomass2 == 0) = NaN;
+intlRxns2m3m_same(biomass2 == 0) = NaN;
+
+clear intlRxns_idx
+%% Transport Reactions Kept at Nt=9
+
 trsptRxns = model1{1}{1}.rxns(model1{1}{1}.trspt_idx);
 
 % 1 Model
-minNi = min(intlCon1(arrayfun(@(x) find(biomass1(x,:) == 0,1,'last'),1:size(biomass1,1))))+1;
 min_intlRxns1m = []; min_trsptRxns1m = [];
-intlRxns1m = []; trsptRxns1m = [];
-% Minimum Transport Reactions
 for intlNum = find(model1{1}{1}.biomass)
     min_trsptRxns1m = [min_trsptRxns1m, trsptRxns(logical(model1{1}{1}.int(model1{1}{1}.trspt_idx,intlNum)))];
 end
-for trsptNum = 1:numel(model1)
-    for intlNum = find(model1{trsptNum}{1}.biomass)
-        % Minimum Intracellular Reactions
-        if model1{trsptNum}{1}.intl_con(intlNum) == minNi
-            min_intlRxns1m = [min_intlRxns1m, intlRxns(logical(model1{trsptNum}{1}.int(model1{trsptNum}{1}.intl_idx,intlNum)))];
-        end
-        % Intracellular Reactions
-        intlRxns1m = [intlRxns1m; intlRxns(logical(model1{trsptNum}{1}.int(model1{trsptNum}{1}.intl_idx,intlNum)))];
-        % Transport Reactions
-        trsptRxns1m = [trsptRxns1m; trsptRxns(logical(model1{trsptNum}{1}.int(model1{trsptNum}{1}.trspt_idx,intlNum)))];
-    end
-end
 
 % 2 Models
-minNi = min(intlCon2(arrayfun(@(x) find(biomass2(x,:) == 0,1,'last'),1:size(biomass2,1))))+1;
-min_intlRxns2m1 = []; min_intlRxns2m2 = [];
 min_trsptRxns2m1 = []; min_trsptRxns2m2 = [];
-intlRxns2m1 = []; trsptRxns2m1 = [];
-intlRxns2m2 = []; trsptRxns2m2 = [];
-% Minimum Transport Reactions
 for intlNum = find(model2{1}{1}.biomass)
     min_trsptRxns2m1 = [min_trsptRxns2m1, trsptRxns(logical(model2{1}{1}.int(model2{1}{1}.trspt_idx,intlNum)))];
     min_trsptRxns2m2 = [min_trsptRxns2m2, trsptRxns(logical(model2{1}{2}.int(model2{1}{2}.trspt_idx,intlNum)))];
 end
-for trsptNum = 1:numel(model2)
-    for intlNum = find(model2{trsptNum}{1}.biomass)
-        % Minimum Intracellular Reactions
-        if model2{trsptNum}{1}.intl_con(intlNum) == minNi
-            min_intlRxns2m1 = [min_intlRxns2m1, intlRxns(logical(model2{trsptNum}{1}.int(model2{trsptNum}{1}.intl_idx,intlNum)))];
-            min_intlRxns2m2 = [min_intlRxns2m2, intlRxns(logical(model2{trsptNum}{2}.int(model2{trsptNum}{2}.intl_idx,intlNum)))];
-        end
-        % Intracellular Reactions
-        intlRxns2m1 = [intlRxns2m1; intlRxns(logical(model2{trsptNum}{1}.int(model2{trsptNum}{1}.intl_idx,intlNum)))];
-        intlRxns2m2 = [intlRxns2m2; intlRxns(logical(model2{trsptNum}{2}.int(model2{trsptNum}{2}.intl_idx,intlNum)))];
-        % Transport Reactions
-        trsptRxns2m1 = [trsptRxns2m1; trsptRxns(logical(model2{trsptNum}{1}.int(model2{trsptNum}{1}.trspt_idx,intlNum)))];
-        trsptRxns2m2 = [trsptRxns2m2; trsptRxns(logical(model2{trsptNum}{2}.int(model2{trsptNum}{2}.trspt_idx,intlNum)))];
-    end
-end
 
 % 3 Models
-minNi = min(intlCon3(arrayfun(@(x) find(biomass3(x,:) == 0,1,'last'),1:size(biomass3,1))))+1;
-min_intlRxns3m1 = []; min_intlRxns3m2 = []; min_intlRxns3m3 = [];
 min_trsptRxns3m1 = []; min_trsptRxns3m2 = []; min_trsptRxns3m3 = [];
-intlRxns3m1 = []; trsptRxns3m1 = [];
-intlRxns3m2 = []; trsptRxns3m2 = [];
-intlRxns3m3 = []; trsptRxns3m3 = [];
-% Minimum Transport Reactions
 for intlNum = find(model3{1}{1}.biomass)
     min_trsptRxns3m1 = [min_trsptRxns3m1, trsptRxns(logical(model3{1}{1}.int(model3{1}{1}.trspt_idx,intlNum)))];
     min_trsptRxns3m2 = [min_trsptRxns3m2, trsptRxns(logical(model3{1}{2}.int(model3{1}{2}.trspt_idx,intlNum)))];
     min_trsptRxns3m3 = [min_trsptRxns3m3, trsptRxns(logical(model3{1}{3}.int(model3{1}{2}.trspt_idx,intlNum)))];
 end
-for trsptNum = 1:numel(model3)
-    for intlNum = find(model3{trsptNum}{1}.biomass)
-        % Minimum Intracellular Reactions
-        if model3{trsptNum}{1}.intl_con(intlNum) == minNi
-            min_intlRxns3m1 = [min_intlRxns3m1, intlRxns(logical(model3{trsptNum}{1}.int(model3{trsptNum}{1}.intl_idx,intlNum)))];
-            min_intlRxns3m2 = [min_intlRxns3m2, intlRxns(logical(model3{trsptNum}{2}.int(model3{trsptNum}{2}.intl_idx,intlNum)))];
-            min_intlRxns3m3 = [min_intlRxns3m3, intlRxns(logical(model3{trsptNum}{3}.int(model3{trsptNum}{3}.intl_idx,intlNum)))];
-        end
-        % Intracellular Reactions
-        intlRxns3m1 = [intlRxns3m1; intlRxns(logical(model3{trsptNum}{1}.int(model3{trsptNum}{1}.intl_idx,intlNum)))];
-        intlRxns3m2 = [intlRxns3m2; intlRxns(logical(model3{trsptNum}{2}.int(model3{trsptNum}{2}.intl_idx,intlNum)))];
-        intlRxns3m3 = [intlRxns3m3; intlRxns(logical(model3{trsptNum}{3}.int(model3{trsptNum}{3}.intl_idx,intlNum)))];
-        % Transport Reactions
-        trsptRxns3m1 = [trsptRxns3m1; trsptRxns(logical(model3{trsptNum}{1}.int(model3{trsptNum}{1}.trspt_idx,intlNum)))];
-        trsptRxns3m2 = [trsptRxns3m2; trsptRxns(logical(model3{trsptNum}{2}.int(model3{trsptNum}{2}.trspt_idx,intlNum)))];
-        trsptRxns3m3 = [trsptRxns3m3; trsptRxns(logical(model3{trsptNum}{3}.int(model3{trsptNum}{3}.trspt_idx,intlNum)))];
-    end
-end
-
-%% Min Intracellular Reactions
-clc
-
-% 1 Model
-min_intlRxns1m_same = arrayfun(@(x) numel(min_intlRxns1m(:,x)),1:size(min_intlRxns1m,2));
-C = arrayfun(@(x) min_intlRxns1m(:,x),1:size(min_intlRxns1m,2),'Uni',false);
-intlRxns1m_same = C{1};
-for ii = 2:numel(C)
-    intlRxns1m_same = intersect(intlRxns1m_same,C{ii});
-end
-% Make the Same Size
-for ii = 1:numel(C)
-    n = max(min_intlRxns1m_same) - numel(C{ii});
-    N = numel(C{ii});
-    for jj = 1:n
-        C{ii}(N+jj) = {''};
-    end
-end
-intlRxns1m_diff = setxor(unique([C{:}]),intlRxns1m_same);
-intlRxns1m_diff(ismember(intlRxns1m_diff,'')) = [];
-
-% 2 Models
-min_intlRxns2m_same = arrayfun(@(x) numel(intersect(min_intlRxns2m1(:,x),min_intlRxns2m2(:,x))),1:size(min_intlRxns2m1,2));
-C = arrayfun(@(x) intersect(min_intlRxns2m1(:,x),min_intlRxns2m2(:,x)),1:size(min_intlRxns2m1,2),'Uni',false);
-intlRxns2m_same = C{1};
-for ii = 2:numel(C)
-    intlRxns2m_same = intersect(intlRxns2m_same,C{ii});
-end
-% Make the Same Size
-for ii = 1:numel(C)
-    n = max(min_intlRxns2m_same) - numel(C{ii});
-    N = numel(C{ii});
-    for jj = 1:n
-        C{ii}(N+jj) = {''};
-    end
-end
-intlRxns2m_diff = setxor(unique([C{:}]),intlRxns2m_same);
-intlRxns2m_diff(ismember(intlRxns2m_diff,'')) = [];
-
-% 3 Models
-min_intlRxns3m_same = arrayfun(@(x) numel(intersect(intersect(min_intlRxns3m1(:,x),min_intlRxns3m2(:,x)),min_intlRxns3m3(:,x))),1:size(min_intlRxns2m1,2));
-C = arrayfun(@(x) intersect(intersect(min_intlRxns3m1(:,x),min_intlRxns3m2(:,x)),min_intlRxns3m3(:,x)),1:size(min_intlRxns3m1,2),'Uni',false);
-intlRxns3m_same = C{1};
-for ii = 2:numel(C)
-    intlRxns3m_same = intersect(intlRxns3m_same,C{ii});
-end
-% Make the Same Size
-for ii = 1:numel(C)
-    n = max(min_intlRxns3m_same) - numel(C{ii});
-    N = numel(C{ii});
-    for jj = 1:n
-        C{ii}(N+jj) = {''};
-    end
-end
-intlRxns3m_diff = setxor(unique([C{:}]),intlRxns3m_same);
-intlRxns3m_diff(ismember(intlRxns3m_diff,'')) = [];
 
 % Min Transport Reactions
 min_trsptRxns = union(union(unique(min_trsptRxns1m), ...
@@ -625,7 +639,7 @@ min_trsptRxns3m3 = histcounts(categorical(min_trsptRxns3m3),categorical(min_trsp
 
 %% Save Data
 
-save(['DOLMN_Parsed/' loadDataName '_summary.mat'], ...
+save(fullfile('DOLMN_Parsed',[loadDataName '_summary.mat']), ...
     'x1','x2','x3','y1','y2','y3','z1','z2','z3', ... % biomass flux growth boundary
     'trsptCon*','intlCon*','biomass*','jaccDist_*','eucDist_*', ... % biomass flux, Jaccard distance, Euclidean distance
     'metNames','exchMets*','numExchMets_*','corr_pathMet*', ... % exchanged metabolites
@@ -633,5 +647,4 @@ save(['DOLMN_Parsed/' loadDataName '_summary.mat'], ...
     'C_*','N_*','P_*','S_*','O_*', ... % where models don't used ...
     'coeff','score*','explained','Nt1m','Ni1m','Nt2m','Ni2m', ... % PCA
     'pathwayNames','pathwayJaccDist','pathwayEucDist', ... % pathways
-    'min_intlRxns*','min_trsptRxns*','intlRxns*','trsptRxns*'); % reactions kept
-
+    'minNi','intlRxns*','min_trsptRxns*'); % # of unique/same intracellular reactions, min transport reactions

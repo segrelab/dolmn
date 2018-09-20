@@ -30,7 +30,7 @@ cbarPos = [0.8 0.1 0.02 0.82]; % colorbar position
 
 % Load Data
 vars = {'trsptCon','intlCon','biomass1','biomass2','biomass1_nan','biomass2_nan','x1','y1','x2','y2'};
-load(['DOLMN_Parsed/' loadDataName '_interp.mat'],vars{:})
+load(fullfile('DOLMN_Parsed',[loadDataName '_interp.mat']),vars{:})
 
 % Colormaps
 cmap_bioFlux = cbrewer('seq','Greens',256);
@@ -107,9 +107,9 @@ clear cmap* vars*
 
 % Load Data
 vars1 = {'trsptCon','intlCon','jaccDist_2m','pathwayEucDist','pathwayJaccDist','pathwayNames','metNames','exchMets_2m','numExchMets_2m','x1','y1','x2','y2'};
-load(['DOLMN_Parsed/' loadDataName '_interp.mat'],vars1{:})
+load(fullfile('DOLMN_Parsed',[loadDataName '_interp.mat']),vars1{:})
 vars2 = {'trsptCon2','score2m1','score2m2','explained','Nt2m','Ni2m'}; % PCA
-load(['DOLMN_Parsed/' loadDataName '_summary.mat'],vars2{:})
+load(fullfile('DOLMN_Parsed',[loadDataName '_summary.mat']),vars2{:})
 
 % PCA Variables
 Nt = [10, 19, 30, 45];
@@ -252,7 +252,7 @@ clear cmap*
 
 % Load Data
 vars = {'rho2','P2_rho','exchMetsNum_2m','exchMetNames','mediumMets','metNames','biomass2'};
-load(['DOLMN_Parsed/' loadDataName '_summary.mat'],vars{:})
+load(fullfile('DOLMN_Parsed',[loadDataName '_summary.mat']),vars{:})
 
 % Colormaps
 cmap_barPlot = 0.45.*ones(1,3);
