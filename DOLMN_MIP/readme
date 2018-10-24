@@ -1,7 +1,9 @@
+Designing metabolic division of labor in microbial communities
+https://www.biorxiv.org/content/early/2018/10/14/442376
+
+
 % require gurobi and cvx
 %   http://cvxr.com/cvx/doc/gurobi.html
-
-
 
 GITecoli_core_equal12_use.m shows how to use function GITecoli_core_equal12 
 %% input folder core_input:
